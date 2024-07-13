@@ -113,6 +113,7 @@
         const FOLDER_ID = '1FzMKtYQZNeHaZX8Haoks02tbvDXhYNSE';
         const API_KEY = 'AIzaSyCU2hGskklaVXyPDh64yjTzYGnO3TTYWpk';
 
+        
         function handleCredentialResponse(response) {
             const accessToken = response.credential;
             console.log('Access Token:', accessToken);
@@ -128,11 +129,12 @@ if (!accessToken) {
         }
 
         function loadDriveContent(accessToken) {
-            fetch(`https://content.googleapis.com/drive/v3/files?q='${FOLDER_ID}' in parents&fields=files(id,name)`, {
+            fetch(`https://content.googleapis.com/drive/v3/files?q='${FOLDER_ID}' in parents&fields=files(id,name)&key=${API_KEY}`, {
     headers: {
         'Authorization': `Bearer ${accessToken}`
     }
 })
+
 
             .then(response => {
                 if (!response.ok) {
