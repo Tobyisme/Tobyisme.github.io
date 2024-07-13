@@ -127,11 +127,12 @@ if (!accessToken) {
         }
 
         function loadDriveContent(accessToken) {
-            fetch(`https://content.googleapis.com/drive/v3/files?q='${FOLDER_ID}' in parents&fields=files(id,name)&key=${API_KEY}`, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            })
+            fetch(`https://content.googleapis.com/drive/v3/files?q='${FOLDER_ID}' in parents&fields=files(id,name)`, {
+    headers: {
+        'Authorization': `Bearer ${accessToken}`
+    }
+})
+
             .then(response => {
                 if (!response.ok) {
                     return response.json().then(errorInfo => {
