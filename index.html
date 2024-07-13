@@ -1,197 +1,185 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Drive 照片網格</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <title>照片预览</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
+            padding: 10px;
         }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 16px;
-            padding: 16px;
+        .header {
+            margin-bottom: 20px;
+            font-size: 16px;
+            text-align: center;
+            color: #555;
         }
-        .grid-item {
-            position: relative;
-            background-color: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .info-button {
+            padding: 10px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            text-decoration: none;
         }
-        .grid-item img {
-            width: 100%;
-            height: 200px;
+        .photo-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .photo {
+            flex: 1 1 calc(20% - 10px);
+            height: 150px;
             object-fit: cover;
             cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-        .grid-item img:hover {
-            transform: scale(1.05);
-        }
-        .download-btn {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 4px 8px;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-        .download-btn:hover {
-            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
         }
         .modal {
             display: none;
             position: fixed;
-            z-index: 1;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
         .modal-content {
-            margin: auto;
-            display: block;
-            width: 80%;
-            max-width: 900px;
-            max-height: 80%;
-            object-fit: contain;
+            text-align: center;
+            max-width: 90%; /* 确保模态框内容不超出屏幕 */
         }
-        .close {
-            position: absolute;
-            top: 15px;
-            right: 35px;
-            color: #f1f1f1;
-            font-size: 40px;
-            font-weight: bold;
+        .modal img {
+            max-width: 100%;
+            max-height: 80vh; /* 限制最大高度为视口高度 */
+            border-radius: 8px;
+        }
+        .download {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            color: white;
+            text-decoration: underline;
+            font-size: 18px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 10.5);
+            border-radius: 5px;
+        }
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-btn {
+            padding: 10px 15px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
         }
-        #loading, #login-container {
-            text-align: center;
-            padding: 20px;
-            font-size: 18px;
-            color: #666;
+        .page-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
-        #error-message {
-            color: red;
-            text-align: center;
-            margin-top: 20px;
+        .page-info {
+            font-size: 16px;
+            color: #555;
         }
     </style>
 </head>
 <body>
-    <div id="login-container">
-        <div id="g_id_onload"
-             data-client_id="763878760483-b1sh725jkpp3idunfhulfmij510mlji4.apps.googleusercontent.com"
-             data-scope="https://www.googleapis.com/auth/drive.readonly"
-             data-callback="handleCredentialResponse">
-        </div>
-        <div class="g_id_signin" data-type="standard"></div>
+
+<div class="header">此為預覽照片，方便尋找，點擊後有下載按鈕，可下載到畫質較高原照片</div>
+
+<a href="https://drive.google.com/drive/folders/1FzMKtYQZNeHaZX8Haoks02tbvDXhYNSE?usp=sharing" class="info-button">雲端硬碟</a>
+
+<div id="photo-grid" class="photo-grid"></div>
+<div class="pagination">
+    <button id="prev-btn" class="page-btn" disabled>上一頁</button>
+    <span id="page-info" class="page-info"></span>
+    <button id="next-btn" class="page-btn">下一頁</button>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <img id="modal-img" src="" alt="放大预览">
+        <a id="download-link" class="download" href="#" target="_blank">下載</a>
     </div>
-    <div id="loading" style="display: none;">載入中，請稍候...</div>
-    <div id="error-message"></div>
-    <div class="grid" id="photoGrid"></div>
-    <div id="myModal" class="modal">
-        <span class="close">&times;</span>
-        <img class="modal-content" id="modalImg">
-    </div>
+</div>
 
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script>
-        const FOLDER_ID = '1FzMKtYQZNeHaZX8Haoks02tbvDXhYNSE';
-        const API_KEY = 'AIzaSyC3dGPd6lVzhkK1_d9k3BPDKJavippakK8';
+<script>
+    const photosPerPage = 20;
+    let currentPage = 1;
+    let photoData = [];
 
-        
-        function handleCredentialResponse(response) {
-            const accessToken = response.credential;
-            console.log('Access Token:', accessToken);
+    fetch('photos.csv')
+        .then(response => response.text())
+        .then(data => {
+            const rows = data.split('\n').slice(1);
+            photoData = rows.map(row => row.split(','));
+            renderPhotos();
+        })
+        .catch(error => console.error('读取 CSV 文件失败:', error));
 
+    function renderPhotos() {
+        const photoGrid = document.getElementById('photo-grid');
+        photoGrid.innerHTML = '';
 
-if (!accessToken) {
-    console.error('未獲取到訪問令牌');
-    return;
-}
-            document.getElementById('login-container').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
-            loadDriveContent(accessToken);
-        }
+        const start = (currentPage - 1) * photosPerPage;
+        const end = start + photosPerPage;
+        const currentPhotos = photoData.slice(start, end);
 
-        function loadDriveContent(accessToken) {
-            fetch(`https://content.googleapis.com/drive/v3/files?q='${FOLDER_ID}' in parents&fields=files(id,name)&key=${API_KEY}`, {
-    headers: {
-        'Authorization': `Bearer ${accessToken}`
+        currentPhotos.forEach(([id, link]) => {
+            const imgElement = document.createElement('img');
+            imgElement.src = `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
+            imgElement.className = 'photo';
+
+            imgElement.onerror = () => {
+                console.error(`无法加载图片: ${imgElement.src}`);
+                imgElement.alt = '图片无法显示';
+            };
+
+            imgElement.onclick = () => {
+                document.getElementById('modal-img').src = imgElement.src;
+                document.getElementById('download-link').href = link;
+                document.getElementById('modal').style.display = 'flex';
+            };
+            photoGrid.appendChild(imgElement);
+        });
+
+        document.getElementById('prev-btn').disabled = currentPage === 1;
+        document.getElementById('next-btn').disabled = end >= photoData.length;
+        document.getElementById('page-info').innerText = `第 ${currentPage} 頁 / 共 ${Math.ceil(photoData.length / photosPerPage)} 頁`;
     }
-})
 
-
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(errorInfo => {
-                        throw new Error(`網絡響應不正確: ${errorInfo.error.message}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                const files = data.files;
-                const grid = document.getElementById('photoGrid');
-                const loading = document.getElementById('loading');
-                loading.style.display = 'none';
-
-                files.forEach(file => {
-                    const gridItem = document.createElement('div');
-                    gridItem.className = 'grid-item';
-
-                    const img = document.createElement('img');
-                    img.src = `https://drive.google.com/uc?export=view&id=${file.id}`;
-                    img.alt = file.name;
-                    img.loading = 'lazy';
-                    img.onclick = () => {
-                        document.getElementById('myModal').style.display = 'block';
-                        document.getElementById('modalImg').src = img.src;
-                    };
-
-                    const downloadBtn = document.createElement('a');
-                    downloadBtn.href = `https://drive.google.com/uc?export=download&id=${file.id}`;
-                    downloadBtn.className = 'download-btn';
-                    downloadBtn.textContent = '下載';
-                    downloadBtn.target = '_blank';
-
-                    gridItem.appendChild(img);
-                    gridItem.appendChild(downloadBtn);
-                    grid.appendChild(gridItem);
-                });
-            })
-            .catch(error => {
-                console.error('載入照片時發生錯誤:', error);
-                document.getElementById('error-message').textContent = '載入照片時發生錯誤：' + error.message;
-            });
+    document.getElementById('prev-btn').onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderPhotos();
         }
+    };
 
-        const modal = document.getElementById('myModal');
-        const closeBtn = document.getElementsByClassName('close')[0];
+    document.getElementById('next-btn').onclick = () => {
+        if ((currentPage - 1) * photosPerPage + photosPerPage < photoData.length) {
+            currentPage++;
+            renderPhotos();
+        }
+    };
 
-        closeBtn.onclick = () => {
-            modal.style.display = 'none';
-        };
+    document.getElementById('modal').onclick = () => {
+        document.getElementById('modal').style.display = 'none';
+    };
+</script>
 
-        window.onclick = (event) => {
-            if (event.target == modal) {
-                modal.style.display = 'none';
-            }
-        };
-    </script>
 </body>
 </html>
