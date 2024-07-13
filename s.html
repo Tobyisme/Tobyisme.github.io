@@ -9,7 +9,11 @@
 </head>
 <body>
     <div id="login-container">
-        <button id="login-button">使用 Google 帳戶登入</button>
+        <div id="g_id_onload"
+             data-client_id="YOUR_CLIENT_ID"
+             data-callback="handleCredentialResponse">
+        </div>
+        <div class="g_id_signin" data-type="standard"></div>
     </div>
     <div id="loading" style="display: none;">載入中，請稍候...</div>
     <div id="error-message"></div>
