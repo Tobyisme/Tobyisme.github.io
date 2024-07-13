@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive 照片網格</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+</head>
+<body>
+    <div id="login-container">
+        <button id="login-button">使用 Google 帳戶登入</button>
+    </div>
+    <div id="loading" style="display: none;">載入中，請稍候...</div>
+    <div id="error-message"></div>
+    <div class="grid" id="photoGrid"></div>
+    <div id="myModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImg">
+    </div>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        // 請替換為您的 Google Cloud Project 的客戶端 ID
+        const CLIENT_ID = '217999736490-svege9oo86421j5be6htrqusfj2e523j.apps.googleusercontent.com';
+        // 請替換為您的 API Key
+        const API_KEY = 'AIzaSyCJgcTVeDJiYscCxQl4hxtlDUx9EPXWmXc';
+        // 請替換為您的資料夾 ID
+        const FOLDER_ID = '1FzMKtYQZNeHaZX8Haoks02tbvDXhYNSE';
+
+        function showError(message) {
+            console.error(message);
+            document.getElementById('error-message').textContent = message;
+        }
+
+        function initClient() {
+    console.log('Initializing Google API client...');
+    return gapi.client.init({
+        apiKey: API_KEY,
+        clientId: CLIENT_ID,
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+        scope: 'https://www.googleapis.com/auth/drive.readonly'
+    }).then(function () {
+        console.log('Google API client initialized successfully');
+        return gapi.auth2.getAuthInstance();
+    }).then(function(auth2) {
+        console.log('Auth2 instance created');
+        auth2.isSignedIn.listen(updateSigninStatus);
+        document.getElementById('login-button').onclick = handleAuthClick;
+        updateSigninStatus(auth2.isSignedIn.get());
+    }).catch(function(error) {
+        console.error('Error details:', error);
+        showError('初始化 Google API 客戶端時發生錯誤: ' + 
+                  (error.details || error.error || error.message || JSON.stringify(error)));
+    });
+}
+
+        function updateSigninStatus(isSignedIn) {
+            console.log('Sign-in status updated:', isSignedIn);
+            if (isSignedIn) {
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('loading').style.display = 'block';
+                loadDriveContent();
+            } else {
+                document.getElementById('login-container').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('photoGrid').innerHTML = '';
+            }
+        }
+
+        function handleAuthClick() {
+            console.log('Auth button clicked');
+            gapi.auth2.getAuthInstance().signIn().catch(function(error) {
+                showError('登入過程中發生錯誤: ' + error.message);
+            });
+        }
+
+        function loadDriveContent() {
+            console.log('Loading Drive content...');
+            gapi.client.drive.files.list({
+                'pageSize': 1000,
+                'fields': "files(id, name, webContentLink, webViewLink)",
+                'q': `'${FOLDER_ID}' in parents and mimeType contains 'image/'`
+            }).then(function(response) {
+                const files = response.result.files;
+                console.log('Loaded', files.length, 'files');
+                const grid = document.getElementById('photoGrid');
+                const loading = document.getElementById('loading');
+
+                loading.style.display = 'none';
+
+                files.forEach(file => {
+                    const gridItem = document.createElement('div');
+                    gridItem.className = 'grid-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = `https://drive.google.com/uc?export=view&id=${file.id}`;
+                    img.alt = file.name;
+                    img.loading = 'lazy';
+                    img.onclick = () => {
+                        document.getElementById('myModal').style.display = 'block';
+                        document.getElementById('modalImg').src = img.src;
+                    };
+                    
+                    const downloadBtn = document.createElement('a');
+                    downloadBtn.href = file.webContentLink;
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.textContent = '下載';
+                    downloadBtn.target = '_blank';
+                    
+                    gridItem.appendChild(img);
+                    gridItem.appendChild(downloadBtn);
+                    grid.appendChild(gridItem);
+                });
+            }).catch(function(error) {
+                showError('載入照片時發生錯誤: ' + error.message);
+            });
+        }
+
+        gapi.load('client:auth2', initClient);
+
+        // 模態框關閉功能
+        const modal = document.getElementById('myModal');
+        const closeBtn = document.getElementsByClassName('close')[0];
+
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+        };
+
+        window.onclick = (event) => {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        };
+    </script>
+    <script>
+        function gapiLoaded() {
+            gapi.load('client:auth2', initClient);
+        }
+        document.addEventListener('DOMContentLoaded', gapiLoaded);
+        </script>
+</body>
+</html>
