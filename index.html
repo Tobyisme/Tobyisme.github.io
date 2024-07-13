@@ -116,6 +116,11 @@
         function handleCredentialResponse(response) {
             const accessToken = response.credential;
 
+
+if (!accessToken) {
+    console.error('未獲取到訪問令牌');
+    return;
+}
             document.getElementById('login-container').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
             loadDriveContent(accessToken);
