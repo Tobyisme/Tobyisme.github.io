@@ -95,6 +95,7 @@
     <div id="login-container">
         <div id="g_id_onload"
              data-client_id="763878760483-b1sh725jkpp3idunfhulfmij510mlji4.apps.googleusercontent.com"
+             data-scope="https://www.googleapis.com/auth/drive.readonly"
              data-callback="handleCredentialResponse">
         </div>
         <div class="g_id_signin" data-type="standard"></div>
@@ -129,7 +130,7 @@
             .then(response => {
                 if (!response.ok) {
                     return response.json().then(errorInfo => {
-                        throw new Error(`Network response was not ok: ${errorInfo.error.message}`);
+                        throw new Error(`網絡響應不正確: ${errorInfo.error.message}`);
                     });
                 }
                 return response.json();
@@ -165,7 +166,7 @@
                 });
             })
             .catch(error => {
-                console.error('Error loading photos:', error);
+                console.error('載入照片時發生錯誤:', error);
                 document.getElementById('error-message').textContent = '載入照片時發生錯誤：' + error.message;
             });
         }
