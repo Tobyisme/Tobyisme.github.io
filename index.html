@@ -123,6 +123,7 @@
     <!-- 保留原有的其他 HTML 元素 -->
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
+        
     const API_KEY = 'AIzaSyCJgcTVeDJiYscCxQl4hxtlDUx9EPXWmXc';
 const FOLDER_ID = '1FzMKtYQZNeHaZX8Haoks02tbvDXhYNSE';
 
@@ -157,8 +158,16 @@ function loadDriveContent(credential) {
             'Authorization': `Bearer ${credential}`
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
     .then(data => {
+        if (!data.files) {
+            throw new Error('API response does not contain files property');
+        }
         const files = data.files;
         console.log('Loaded', files.length, 'files');
         const grid = document.getElementById('photoGrid');
@@ -195,6 +204,7 @@ function loadDriveContent(credential) {
         document.getElementById('error-message').textContent = '載入照片時發生錯誤：' + error.message;
     });
 }
+
 const modal = document.getElementById('myModal');
         const closeBtn = document.getElementsByClassName('close')[0];
 
