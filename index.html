@@ -108,7 +108,10 @@
     <div id="login-container">
         <div id="g_id_onload"
              data-client_id="763878760483-b1sh725jkpp3idunfhulfmij510mlji4.apps.googleusercontent.com"
-             data-callback="handleCredentialResponse">
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
         </div>
         <div class="g_id_signin" data-type="standard"></div>
     </div>
@@ -123,7 +126,6 @@
     <script src="https://apis.google.com/js/api.js"></script>
     <script>
         const FOLDER_ID = '1FzMKtYQZNeHaZX8Haoks02tbvDXhYNSE';
-        let tokenClient;
 
         function handleCredentialResponse(response) {
             const responsePayload = decodeJwtResponse(response.credential);
@@ -149,56 +151,47 @@
         }
 
         function loadDriveContent(credential) {
-            gapi.load('client:auth2', () => {
+            gapi.load('client', () => {
                 gapi.client.init({
                     apiKey: 'AIzaSyCU2hGskklaVXyPDh64yjTzYGnO3TTYWpk',
-                    clientId: '763878760483-b1sh725jkpp3idunfhulfmij510mlji4.apps.googleusercontent.com',
                     discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-                    scope: 'https://www.googleapis.com/auth/drive.readonly',
                 }).then(() => {
-                    gapi.auth2.getAuthInstance().signIn().then(() => {
-                        gapi.client.drive.files.list({
-                            q: `'${FOLDER_ID}' in parents`,
-                            fields: 'files(id, name)'
-                        }).then((response) => {
-                            const files = response.result.files;
-                            const grid = document.getElementById('photoGrid');
-                            const loading = document.getElementById('loading');
-                            loading.style.display = 'none';
-                            
-                            files.forEach(file => {
-                                const gridItem = document.createElement('div');
-                                gridItem.className = 'grid-item';
-                                
-                                const img = document.createElement('img');
-                                img.src = `https://drive.google.com/uc?export=view&id=${file.id}`;
-                                img.alt = file.name;
-                                img.loading = 'lazy';
-                                img.onclick = () => {
-                                    document.getElementById('myModal').style.display = 'block';
-                                    document.getElementById('modalImg').src = img.src;
-                                };
-                                
-                                const downloadBtn = document.createElement('a');
-                                downloadBtn.href = `https://drive.google.com/uc?export=download&id=${file.id}`;
-                                downloadBtn.className = 'download-btn';
-                                downloadBtn.textContent = '下載';
-                                downloadBtn.target = '_blank';
-                                
-                                gridItem.appendChild(img);
-                                gridItem.appendChild(downloadBtn);
-                                grid.appendChild(gridItem);
-                            });
-                        }).catch((error) => {
-                            let errorMessage = '載入照片時發生錯誤';
-                            if (error.result && error.result.error) {
-                                errorMessage += `：${error.result.error.message}`;
-                            }
-                            document.getElementById('error-message').textContent = errorMessage;
-                        });
-                    }).catch((error) => {
-                        document.getElementById('error-message').textContent = '登入時發生錯誤：' + error.message;
+                    gapi.client.setToken({access_token: credential});
+                    return gapi.client.drive.files.list({
+                        q: `'${FOLDER_ID}' in parents`,
+                        fields: 'files(id, name)',
                     });
+                }).then(response => {
+                    const files = response.result.files;
+                    const grid = document.getElementById('photoGrid');
+                    const loading = document.getElementById('loading');
+                    loading.style.display = 'none';
+
+                    files.forEach(file => {
+                        const gridItem = document.createElement('div');
+                        gridItem.className = 'grid-item';
+                        
+                        const img = document.createElement('img');
+                        img.src = `https://drive.google.com/uc?export=view&id=${file.id}`;
+                        img.alt = file.name;
+                        img.loading = 'lazy';
+                        img.onclick = () => {
+                            document.getElementById('myModal').style.display = 'block';
+                            document.getElementById('modalImg').src = img.src;
+                        };
+                        
+                        const downloadBtn = document.createElement('a');
+                        downloadBtn.href = `https://drive.google.com/uc?export=download&id=${file.id}`;
+                        downloadBtn.className = 'download-btn';
+                        downloadBtn.textContent = '下載';
+                        downloadBtn.target = '_blank';
+                        
+                        gridItem.appendChild(img);
+                        gridItem.appendChild(downloadBtn);
+                        grid.appendChild(gridItem);
+                    });
+                }).catch(error => {
+                    document.getElementById('error-message').textContent = '載入照片時發生錯誤：' + error.message;
                 });
             });
         }
