@@ -45,15 +45,16 @@ function loadMembers(groupId, membersListContainer) {
 }
 
 // 新增分组
-function addGroupToFirestore(groupName, skill, className, studentName) {
+function addGroupToFirestore(groupName, skill, className, studentName, groupCode) {
     db.collection("groups").add({
         groupName,
         skill,
         className,
         studentName,
-        members: [] // 新分组初始化成员数组
+        members: [],
+        groupCode // 新增组别代码
     }).then((docRef) => {
-        addGroup(docRef.id, groupName, skill, className, studentName);
+        addGroup(docRef.id, groupName, skill, className, studentName, groupCode);
     }).catch((error) => {
         console.error("Error adding document: ", error);
     });
@@ -94,7 +95,7 @@ function addGroup(id, groupName, skill, className, studentName) {
     groupContent.className = 'group-content';
     groupContent.innerHTML = `
       <p><strong>擅長項目:</strong> ${skill}</p>
-      <p><strong>組長:</strong> ${className}- ${studentName}</p>
+      <p><strong>組長:</strong> ${className} - ${studentName}</p>
       <div class="members-list"></div> <!-- 显示组员的容器 -->
     `;
     groupCard.appendChild(groupContent);
@@ -150,10 +151,10 @@ function updateGroupMembers(groupId, members) {
 
 
 // 显示加入组别弹窗
-function showJoinGroupModal(className, studentName, groupId) {
+function showJoinGroupModal(className, studentName, groupId, groupCode) {
     const joinGroupModal = document.createElement('div');
     joinGroupModal.className = 'modal';
-    joinGroupModal.style.display = 'flex'; // 确保可见
+    joinGroupModal.style.display = 'flex';
     joinGroupModal.innerHTML = `
       <div class="modal-content">
         <span class="close-btn" onclick="this.parentElement.parentElement.remove()">×</span>
@@ -162,34 +163,45 @@ function showJoinGroupModal(className, studentName, groupId) {
         <input type="text" id="joinClassName" placeholder="輸入班級">
         <label for="joinStudentName">姓名:</label>
         <input type="text" id="joinStudentName" placeholder="輸入姓名">
+        <label for="joinGroupCode">組別代碼:</label>
+        <input type="text" id="joinGroupCode" placeholder="輸入組別代碼"> <!-- 新增输入框 -->
         <button id="joinGroupConfirmBtn">確認加入</button>
-        <div class="alert" id="joinAlert"></div> <!-- 提示信息 -->
+        <div class="alert" id="joinAlert"></div>
       </div>
     `;
     document.body.appendChild(joinGroupModal);
 
-    // 确保弹窗使用 CSS 动画
-    setTimeout(() => {
-        joinGroupModal.classList.remove('hide'); // 确保显示
-    }, 10);
-
     document.getElementById('joinGroupConfirmBtn').addEventListener('click', () => {
         const joinClassName = document.getElementById('joinClassName').value;
         const joinStudentName = document.getElementById('joinStudentName').value;
+        const joinGroupCode = document.getElementById('joinGroupCode').value; // 获取输入的组别代码
 
-        const alertBox = document.getElementById('joinAlert'); // 获取提示框
+        const alertBox = document.getElementById('joinAlert');
 
-        if (joinClassName && joinStudentName) {
-            addMemberToFirestore(groupId, joinClassName, joinStudentName);
-            alertBox.textContent = `已成功加入組別！班級: ${joinClassName}, 姓名: ${joinStudentName}`;
-            alertBox.style.color = "#5cb85c"; // 成功提示色
-            setTimeout(() => {
-                joinGroupModal.remove(); // 关闭弹窗
-            }, 2000); // 2秒后关闭
-        } else {
-            alertBox.textContent = "請填寫所有欄位！";
-            alertBox.style.color = "#d9534f"; // 警告提示色
-        }
+        // 从 Firestore 获取对应组别的代码
+        db.collection("groups").doc(groupId).get().then((doc) => {
+            if (doc.exists) {
+                const groupData = doc.data();
+                if (joinGroupCode === groupData.groupCode) { // 验证代码
+                    if (joinClassName && joinStudentName) {
+                        addMemberToFirestore(groupId, joinClassName, joinStudentName);
+                        alertBox.textContent = `已成功加入組別！班級: ${joinClassName}, 姓名: ${joinStudentName}`;
+                        alertBox.style.color = "#5cb85c";
+                        setTimeout(() => {
+                            joinGroupModal.remove();
+                        }, 2000);
+                    } else {
+                        alertBox.textContent = "請填寫所有欄位！";
+                        alertBox.style.color = "#d9534f";
+                    }
+                } else {
+                    alertBox.textContent = "組別代碼錯誤！";
+                    alertBox.style.color = "#d9534f";
+                }
+            }
+        }).catch((error) => {
+            console.error("Error getting document:", error);
+        });
     });
 }
 
@@ -228,14 +240,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const skill = document.getElementById('skill').value;
         const className = document.getElementById('className').value;
         const studentName = document.getElementById('studentName').value;
-  
-        if (groupName && skill && className && studentName) {
-            addGroupToFirestore(groupName, skill, className, studentName);
+        const groupCode = document.getElementById('groupCode').value; // 获取组别代码
+    
+        if (groupName && skill && className && studentName && groupCode) {
+            addGroupToFirestore(groupName, skill, className, studentName, groupCode);
             createGroupModal.style.display = 'none';
             document.getElementById('groupName').value = '';
             document.getElementById('skill').value = '';
             document.getElementById('className').value = '';
             document.getElementById('studentName').value = '';
+            document.getElementById('groupCode').value = ''; // 清空代码输入框
         }
     });
 });
