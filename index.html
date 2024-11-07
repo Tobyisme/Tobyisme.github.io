@@ -1,49 +1,48 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>分組頁面</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宥任</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="logo-container">
-      <img src="logo.png" alt="Logo" class="logo" />
-      <p>ZSGA 畢聯會</p>
+    <header>
+        <div class="header-content">
+            <div class="title-section">
+                <h1> 宥任</h1>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="thumbnails-container" class="thumbnails-grid"></div>
+    </main>
+    <div id="preview-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-controls">
+                <button id="prev-page" class="control-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="page-info">第 <span id="current-page">0</span> 頁，共 <span id="total-pages">0</span> 頁</span>
+                <button id="next-page" class="control-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <canvas id="pdf-viewer"></canvas>
+            </div>
+        </div>
     </div>
-    <button id="createGroupBtn">建立分組</button>
+
+    <div id="loading-indicator" class="loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        載入中...
+    </div>
     
-    <div id="groupContainer" class="group-container">
-      <!-- 動態生成分組卡片 -->
-    </div>
-    <p id="kkl">需要刪除組別，聯繫宥任。</p>
-  </div>
-
-  <!-- 建立分組彈窗 -->
-  <div id="createGroupModal" class="modal">
-    <div class="modal-content">
-      <span class="close-btn" id="closeCreateGroupModal">×</span>
-      <h2>建立分組</h2>
-      <label for="groupName">組別名稱:</label>
-      <input type="text" id="groupName" placeholder="輸入組別名稱">
-      <label for="skill">擅長項目:</label>
-      <input type="text" id="skill" placeholder="輸入擅長項目">
-      <label for="className">班級:</label>
-      <input type="text" id="className" placeholder="輸入班級">
-      <label for="studentName">姓名:</label>
-      <input type="text" id="studentName" placeholder="輸入姓名">
-      <label for="groupCode">組別代碼:</label>
-      <input type="text" id="groupCode" placeholder="輸入組別代碼">
-      <button id="createGroupConfirmBtn">確認</button>
-    </div>
-  </div>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-  
-  <!-- 引入 JavaScript -->
-  <script src="script.js"></script>
+    <script src="js/script.js"></script>
 </body>
-</html>
+</html> 
